@@ -12,7 +12,7 @@ CORS(app, resources={
     r"/api/*": {
         "origins": [
             "http://localhost:3000",
-            "https://your-frontend-url.vercel.app"  # Update with your frontend URL
+            "https://d-todo-app-ub5q-themaker8s-projects.vercel.app/"  # Update with your frontend URL
         ]
     }
 })
