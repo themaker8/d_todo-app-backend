@@ -18,22 +18,6 @@ CORS(app, resources={
     }
 })
 
-# Root route for testing
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify({
-        "status": "ok",
-        "message": "Backend is running!",
-        "endpoints": {
-            "test": "/api/test",
-            "tasks": "/api/tasks",
-        }
-    })
-
-@app.route('/api/test', methods=['GET'])
-def test():
-    return jsonify({"status": "ok", "message": "Backend is working!"})
-
 # Database setup
 def init_db():
     conn = sqlite3.connect('tasks.db')
@@ -54,6 +38,13 @@ def init_db():
     conn.close()
 
 init_db()
+
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        "status": "ok",
+        "message": "Backend is running!"
+    })
 
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks():
@@ -102,6 +93,54 @@ def create_task():
     conn.close()
     
     return jsonify({"message": "Task created", "id": task_id})
+
+@app.route('/api/tasks/<task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    data = request.json
+    address = data.get('address')
+    
+    if not address:
+        return jsonify({"error": "Address is required"}), 400
+
+    conn = sqlite3.connect('tasks.db')
+    c = conn.cursor()
+    c.execute('DELETE FROM tasks WHERE id = ? AND user_address = ?', 
+              (task_id, address))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({"message": "Task deleted"})
+
+@app.route('/api/tasks/<task_id>/toggle', methods=['PUT'])
+def toggle_task(task_id):
+    data = request.json
+    address = data.get('address')
+    
+    if not address:
+        return jsonify({"error": "Address is required"}), 400
+
+    conn = sqlite3.connect('tasks.db')
+    c = conn.cursor()
+    c.execute('SELECT status FROM tasks WHERE id = ? AND user_address = ?', 
+              (task_id, address))
+    result = c.fetchone()
+    
+    if not result:
+        conn.close()
+        return jsonify({"error": "Task not found"}), 404
+        
+    new_status = 'completed' if result[0] == 'pending' else 'pending'
+    
+    c.execute('''
+    UPDATE tasks 
+    SET status = ? 
+    WHERE id = ? AND user_address = ?
+    ''', (new_status, task_id, address))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({"message": "Task updated", "status": new_status})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
