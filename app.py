@@ -7,16 +7,30 @@ import uuid
 
 app = Flask(__name__)
 
-# Enable CORS
+# Update CORS settings to include your Vercel domain
 CORS(app, resources={
     r"/api/*": {
         "origins": [
             "http://localhost:3000",
             "http://127.0.0.1:3000",
-            "https://d-todo-app-git-main-themaker8.vercel.app"
-        ]
+            "https://decen-todo-app.vercel.app",  # Add your Vercel domain
+            "https://decen-todo-app.vercel.app/"  # Also add with trailing slash
+        ],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "expose_headers": ["Content-Range", "X-Content-Range"]
     }
 })
+
+# For debugging CORS issues
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'https://decen-todo-app.vercel.app')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
+# ... rest of your code stays the same ...s
 
 # Database setup
 def init_db():
